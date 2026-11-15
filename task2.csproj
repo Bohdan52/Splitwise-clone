@@ -13,6 +13,9 @@
 		<EmbeddedResource Remove="task2.Tests\**" />
 		<None Remove="task2.Tests\**" />
 	</ItemGroup>
+	<ItemGroup>
+	  <None Include="task2.Tests.csproj" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
