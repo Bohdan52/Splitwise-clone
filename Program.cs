@@ -51,6 +51,11 @@ builder.Services.AddAuthentication(options =>
 // 4. Dependency Injection (Сервіси)
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
+builder.Services.AddScoped<IExpenseService, ExpenseService>(); 
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ISettlementService, SettlementService>();
+builder.Services.AddScoped<IBalanceService, BalanceService>();
+
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

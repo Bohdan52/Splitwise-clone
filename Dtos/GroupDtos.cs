@@ -2,6 +2,8 @@ using task2.Domain.Enums;
 
 namespace task2.Dtos;
 
+public record AddGroupMemberRequest(Guid UserId);
+
 public record CreateGroupRequest(string Name, GroupType Type, string Currency);
 
 public record AddMemberRequest(Guid UserId);
