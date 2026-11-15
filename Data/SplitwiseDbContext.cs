@@ -5,13 +5,10 @@ using task2.Domain.Entities;
 
 namespace task2.Data;
 
-// 1. Успадковуємо IdentityDbContext і вказуємо тип ключа Guid
 public class SplitwiseDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 {
     public SplitwiseDbContext(DbContextOptions<SplitwiseDbContext> options)
         : base(options) { }
-
-    // 2. DbSet<User> ми прибрали, бо він вже є в IdentityDbContext
 
     public DbSet<Group> Groups => Set<Group>();
     public DbSet<GroupMember> GroupMembers => Set<GroupMember>();
@@ -22,7 +19,6 @@ public class SplitwiseDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gu
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // 3. Обов'язково викликаємо базовий метод для налаштування таблиць Identity
         base.OnModelCreating(modelBuilder);
 
         // ---------- User ----------
