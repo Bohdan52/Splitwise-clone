@@ -5,7 +5,7 @@ using task2.Services.Interfaces;
 
 namespace task2.Controllers;
 
-[Authorize] // Тепер для доступу потрібен токен
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class GroupController : ControllerBase
@@ -20,7 +20,6 @@ public class GroupController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromQuery] string name, [FromQuery] string currency)
     {
-        // Отримуємо Guid користувача з JWT-токена
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdString, out var userId)) return Unauthorized();
 
