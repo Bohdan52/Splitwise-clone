@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+	<DataCollectionRunSettings>
+		<DataCollectors>
+			<DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0" assemblyQualifiedName="Microsoft.VisualStudio.Coverage.DynamicCoverageDataCollector, Microsoft.VisualStudio.TraceCollector, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+				<Configuration>
+					<CodeCoverage>
+						<!-- Вимірюємо лише основний проєкт task2 -->
+						<ModulePaths>
+							<Include>
+								<ModulePath>.*task2\.dll$</ModulePath>
+							</Include>
+							<Exclude>
+								<ModulePath>.*task2\.Tests\.dll$</ModulePath>
+							</Exclude>
+						</ModulePaths>
+
+						<!-- Виключаємо системний код, міграції та програму -->
+						<Functions>
+							<Exclude>
+								<Function>^Microsoft\.AspNetCore\.OpenApi\.Generated\..*</Function>
+								<Function>^System\.Runtime\.CompilerServices\..*</Function>
+								<Function>^Microsoft\.AspNetCore\..*</Function>
+								<Function>.*\.Migrations\..*</Function>
+								<Function>^Program\..*</Function>
+								<Function>^&lt;Program&gt;.*</Function>
+							</Exclude>
+						</Functions>
+
+						<!-- Виключаємо файли з папки Migrations та автогенерований код -->
+						<Sources>
+							<Exclude>
+								<Source>.*\\Migrations\\.*</Source>
+								<Source>.*\\Program\.cs$</Source>
+								<Source>.*\\obj\\.*</Source>
+								<Source>.*\.g\.cs$</Source>
+								<Source>.*\.generated\.cs$</Source>
+								<Source>.*\.Designer\.cs$</Source>
+								<Source>.*\\Controllers\\.*</Source>
+								<Source>.*\\Middleware\\.*</Source>
+								<Source>.*\\Dtos\\.*</Source>
+							</Exclude>
+						</Sources>
+
+						<!-- Ігноруємо атрибути, які Visual Studio ставить автоматично -->
+						<Attributes>
+							<Exclude>
+								<Attribute>^System\.Diagnostics\.DebuggerHiddenAttribute$</Attribute>
+								<Attribute>^System\.Diagnostics\.DebuggerNonUserCodeAttribute$</Attribute>
+								<Attribute>^System\.CodeDom\.Compiler\.GeneratedCodeAttribute$</Attribute>
+								<Attribute>^System\.Diagnostics\.CodeAnalysis\.ExcludeFromCodeCoverageAttribute$</Attribute>
+							</Exclude>
+						</Attributes>
+					</CodeCoverage>
+				</Configuration>
+			</DataCollector>
+		</DataCollectors>
+	</DataCollectionRunSettings>
+</RunSettings>

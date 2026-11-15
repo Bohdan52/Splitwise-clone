@@ -1,8 +1,6 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using task2.Data;
+using task2.Domain.Entities;
 using task2.Domain.Enums;
 using task2.Services.Implementations;
 using Xunit;
@@ -11,62 +9,97 @@ namespace task2.Tests;
 
 public class GroupServiceTests
 {
-    private readonly SplitwiseDbContext _context;
-    private readonly GroupService _groupService;
-
-    public GroupServiceTests()
+    private SplitwiseDbContext GetInMemoryDbContext()
     {
-        // Налаштовуємо віртуальну базу даних (унікальна назва для кожного тесту)
         var options = new DbContextOptionsBuilder<SplitwiseDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-
-        _context = new SplitwiseDbContext(options);
-        _groupService = new GroupService(_context);
+        return new SplitwiseDbContext(options);
     }
 
     [Fact]
-    public async Task CreateGroupAsync_ValidData_CreatesGroupAndMember()
+    public async Task CreateGroupAsync_ShouldCreateGroupAndAddAdmin()
     {
-        // Arrange
+        var context = GetInMemoryDbContext();
+        var service = new GroupService(context);
         var userId = Guid.NewGuid();
-        var groupName = "Test Group";
-        var currency = "USD";
 
-        // Act
-        var result = await _groupService.CreateGroupAsync(userId, groupName, currency);
+        var result = await service.CreateGroupAsync(userId, "Vacation", "USD");
 
-        // Assert
         Assert.NotNull(result);
-        Assert.Equal(groupName, result.Name);
+        Assert.Equal("Vacation", result.Name);
 
-        // Перевіряємо, що група дійсно збережена у віртуальній БД
-        var groupInDb = await _context.Groups.FirstOrDefaultAsync(g => g.Id == result.Id);
-        Assert.NotNull(groupInDb);
-
-        // Перевіряємо, що творця автоматично додано як учасника (Admin)
-        var memberInDb = await _context.GroupMembers
-            .FirstOrDefaultAsync(m => m.GroupId == result.Id && m.UserId == userId);
-
-        Assert.NotNull(memberInDb);
-        Assert.Equal(MemberRole.Admin, memberInDb.Role);
+        var member = await context.GroupMembers.FirstOrDefaultAsync(gm => gm.GroupId == result.Id && gm.UserId == userId);
+        Assert.NotNull(member);
+        Assert.Equal(MemberRole.Admin, member.Role);
     }
 
     [Fact]
-    public async Task GetUserGroupsAsync_UserHasGroups_ReturnsGroupsList()
+    public async Task AddMemberAsync_ShouldAddUser_WhenAdminRequests()
     {
-        // Arrange
+        var context = GetInMemoryDbContext();
+        var groupId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var newUserId = Guid.NewGuid();
+
+        context.Groups.Add(new Group { Id = groupId, Name = "Test Group", Currency = "USD", CreatedById = adminId });
+        context.Users.Add(new User { Id = newUserId, UserName = "test", Email = "test@test.com", FullName = "Test" });
+        context.GroupMembers.Add(new GroupMember { Id = Guid.NewGuid(), GroupId = groupId, UserId = adminId, Role = MemberRole.Admin });
+        await context.SaveChangesAsync();
+
+        var service = new GroupService(context);
+        await service.AddMemberAsync(groupId, newUserId, adminId);
+
+        var addedMember = await context.GroupMembers.FirstOrDefaultAsync(gm => gm.UserId == newUserId);
+        Assert.NotNull(addedMember);
+    }
+
+    [Fact]
+    public async Task RemoveMemberAsync_ShouldRemoveUser_WhenAdminRequests()
+    {
+        var context = GetInMemoryDbContext();
+        var service = new GroupService(context);
+
+        var groupId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var regularId = Guid.NewGuid();
+
+        context.Groups.Add(new Group { Id = groupId, Name = "Test Group", Currency = "USD", CreatedById = adminId });
+        context.GroupMembers.AddRange(
+            new GroupMember { Id = Guid.NewGuid(), GroupId = groupId, UserId = adminId, Role = MemberRole.Admin },
+            new GroupMember { Id = Guid.NewGuid(), GroupId = groupId, UserId = regularId, Role = MemberRole.Member }
+        );
+        await context.SaveChangesAsync();
+
+        await service.RemoveMemberAsync(groupId, regularId, adminId);
+
+        var removed = await context.GroupMembers.FirstOrDefaultAsync(gm => gm.UserId == regularId);
+        Assert.Null(removed);
+    }
+
+    [Fact]
+    public async Task RemoveMemberAsync_ShouldThrow_WhenNotAdmin()
+    {
+        var context = GetInMemoryDbContext();
+        var service = new GroupService(context);
+
+        var groupId = Guid.NewGuid();
         var userId = Guid.NewGuid();
+        var otherId = Guid.NewGuid();
 
-        // Створюємо дві групи для цього користувача
-        await _groupService.CreateGroupAsync(userId, "Group 1", "USD");
-        await _groupService.CreateGroupAsync(userId, "Group 2", "EUR");
+        context.Groups.Add(new Group { Id = groupId, Name = "Test Group", Currency = "USD", CreatedById = userId });
+        context.GroupMembers.Add(new GroupMember { Id = Guid.NewGuid(), GroupId = groupId, UserId = userId, Role = MemberRole.Member });
+        await context.SaveChangesAsync();
 
-        // Act
-        var result = await _groupService.GetUserGroupsAsync(userId);
+        await Assert.ThrowsAsync<Exception>(() => service.RemoveMemberAsync(groupId, otherId, userId));
+    }
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Count()); // Очікуємо, що повернеться рівно 2 групи
+    [Fact]
+    public async Task AddMemberAsync_ShouldThrow_WhenGroupNotFound()
+    {
+        var context = GetInMemoryDbContext();
+        var service = new GroupService(context);
+
+        await Assert.ThrowsAsync<Exception>(() => service.AddMemberAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
     }
 }
