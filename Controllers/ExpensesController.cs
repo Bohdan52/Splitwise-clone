@@ -47,28 +47,15 @@ public class ExpensesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateExpenseRequest request)
     {
-        try
-        {
-            var result = await _expenseService.CreateAsync(request, GetUserId());
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var result = await _expenseService.CreateAsync(request, GetUserId());
+        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        try
-        {
-            await _expenseService.DeleteAsync(id, GetUserId());
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        await _expenseService.DeleteAsync(id, GetUserId());
+        return NoContent();
+        
     }
 }

@@ -28,15 +28,8 @@ public class GroupController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateGroupRequest request)
     {
-        try
-        {
-            var group = await _groupService.CreateGroupAsync(GetUserId(), request.Name, request.Currency);
-            return Ok(group);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var group = await _groupService.CreateGroupAsync(GetUserId(), request.Name, request.Currency);
+        return Ok(group);
     }
 
     [HttpGet]
@@ -49,28 +42,14 @@ public class GroupController : ControllerBase
     [HttpPost("{id:guid}/members")]
     public async Task<IActionResult> AddMember(Guid id, [FromBody] AddGroupMemberRequest request)
     {
-        try
-        {
-            await _groupService.AddMemberAsync(id, request.UserId, GetUserId());
-            return Ok();
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        await _groupService.AddMemberAsync(id, request.UserId, GetUserId());
+        return Ok();
     }
 
     [HttpDelete("{id:guid}/members/{userId:guid}")]
     public async Task<IActionResult> RemoveMember(Guid id, Guid userId)
     {
-        try
-        {
-            await _groupService.RemoveMemberAsync(id, userId, GetUserId());
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        await _groupService.RemoveMemberAsync(id, userId, GetUserId());
+        return NoContent();
     }
 }

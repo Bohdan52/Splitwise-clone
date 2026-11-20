@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using task2.Dtos;
+using task2.Exceptions;
 using task2.Services.Interfaces;
 
 namespace task2.Controllers;
@@ -34,8 +35,7 @@ public class UsersController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        try { return Ok(await _userService.GetByIdAsync(id)); }
-        catch (Exception ex) { return NotFound(ex.Message); }
+        return Ok(await _userService.GetByIdAsync(id));
     }
 
     [HttpPut("{id:guid}")]
@@ -43,22 +43,16 @@ public class UsersController : ControllerBase
     {
         if (GetUserId() != id)
             return Forbid();
-
-        try { return Ok(await _userService.UpdateAsync(id, request)); }
-        catch (Exception ex) { return BadRequest(ex.Message); }
+        return Ok(await _userService.UpdateAsync(id, request));
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
         if (GetUserId() != id)
-            return Forbid();
+            throw new ForbiddenException("You can only delete your own account.");
 
-        try
-        {
-            await _userService.DeleteAsync(id);
-            return NoContent();
-        }
-        catch (Exception ex) { return BadRequest(ex.Message); }
+        await _userService.DeleteAsync(id);
+        return NoContent();
     }
 }

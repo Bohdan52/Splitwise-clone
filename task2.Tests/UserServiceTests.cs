@@ -5,6 +5,7 @@ using task2.Domain.Entities;
 using task2.Dtos;
 using task2.Services.Implementations;
 using Xunit;
+using task2.Exceptions;
 
 namespace task2.Tests;
 
@@ -23,7 +24,7 @@ public class UserServiceTests
         mockUserManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync((User)null!);
 
         var service = new UserService(mockUserManager.Object);
-        await Assert.ThrowsAsync<Exception>(() => service.GetByIdAsync(Guid.NewGuid()));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(Guid.NewGuid()));
     }
 
     [Fact]
@@ -78,6 +79,6 @@ public class UserServiceTests
         var service = new UserService(mockUserManager.Object);
         var request = new UpdateUserRequest("test@test.com", "Name", "USD");
 
-        await Assert.ThrowsAsync<Exception>(() => service.UpdateAsync(user.Id, request));
+        await Assert.ThrowsAsync<BadRequestException>(() => service.UpdateAsync(user.Id, request));
     }
 }

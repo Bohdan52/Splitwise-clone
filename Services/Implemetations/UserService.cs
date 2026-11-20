@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using task2.Domain.Entities;
 using task2.Dtos;
 using task2.Services.Interfaces;
+using task2.Exceptions;
 
 namespace task2.Services.Implementations;
 
@@ -31,7 +32,7 @@ public class UserService : IUserService
     {
         var user = await _userManager.FindByIdAsync(id.ToString());
 
-        if (user == null) throw new Exception("User not found");
+        if (user == null) throw new NotFoundException("User not found");
 
         return new UserResponse(
             user.Id,
@@ -45,7 +46,7 @@ public class UserService : IUserService
     {
         var user = await _userManager.FindByIdAsync(id.ToString());
 
-        if (user == null) throw new Exception("User not found");
+        if (user == null) throw new NotFoundException("User not found");
 
         user.Email = request.Email;
         user.FullName = request.FullName;
@@ -54,7 +55,7 @@ public class UserService : IUserService
         var result = await _userManager.UpdateAsync(user);
 
         if (!result.Succeeded)
-            throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+            throw new BadRequestException(string.Join(", ", result.Errors.Select(e => e.Description)));
 
         return new UserResponse(
             user.Id,
@@ -68,11 +69,11 @@ public class UserService : IUserService
     {
         var user = await _userManager.FindByIdAsync(id.ToString());
 
-        if (user == null) throw new Exception("User not found");
+        if (user == null) throw new NotFoundException("User not found");
 
         var result = await _userManager.DeleteAsync(user);
 
         if (!result.Succeeded)
-            throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+            throw new BadRequestException(string.Join(", ", result.Errors.Select(e => e.Description)));
     }
 }

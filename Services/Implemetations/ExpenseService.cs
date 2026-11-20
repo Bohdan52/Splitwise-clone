@@ -4,6 +4,7 @@ using task2.Domain.Entities;
 using task2.Domain.Enums;
 using task2.Dtos;
 using task2.Services.Interfaces;
+using task2.Exceptions;
 
 namespace task2.Services.Implementations;
 
@@ -31,7 +32,7 @@ public class ExpenseService : IExpenseService
             .Include(e => e.Splits)
             .FirstOrDefaultAsync(e => e.Id == id);
 
-        if (expense == null) throw new Exception("Expense not found");
+        if (expense == null) throw new NotFoundException("Expense not found");
         return MapToResponse(expense);
     }
 
@@ -77,10 +78,10 @@ public class ExpenseService : IExpenseService
     {
         var expense = await _context.Expenses.Include(e => e.Splits).FirstOrDefaultAsync(e => e.Id == id);
 
-        if (expense == null) throw new Exception("Expense not found");
+        if (expense == null) throw new ForbiddenException("Expense not found");
 
         if (expense.CreatedById != currentUserId && expense.PaidById != currentUserId)
-            throw new Exception("You are not authorized to delete this expense.");
+            throw new UnauthorizedException("You are not authorized to delete this expense.");
 
         _context.Expenses.Remove(expense);
         await _context.SaveChangesAsync();
