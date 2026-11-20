@@ -5,6 +5,7 @@ using task2.Domain.Enums;
 using task2.Dtos;
 using task2.Services.Implementations;
 using Xunit;
+using task2.Exceptions;
 
 namespace task2.Tests;
 
@@ -66,7 +67,7 @@ public class ExpenseServiceTests
         var context = GetInMemoryDbContext();
         var service = new ExpenseService(context);
 
-        await Assert.ThrowsAsync<Exception>(() => service.GetByIdAsync(Guid.NewGuid()));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(Guid.NewGuid()));
     }
 
     [Fact]
@@ -120,6 +121,6 @@ public class ExpenseServiceTests
         var randomUserId = Guid.NewGuid();
         var expenseId = context.Expenses.First().Id;
 
-        await Assert.ThrowsAsync<Exception>(() => service.DeleteAsync(expenseId, randomUserId));
+        await Assert.ThrowsAsync<UnauthorizedException>(() => service.DeleteAsync(expenseId, randomUserId));
     }
 }

@@ -2,6 +2,7 @@
 using task2.Domain.Entities;
 using task2.Dtos;
 using task2.Services.Interfaces;
+using task2.Exceptions;
 
 namespace task2.Services.Implementations;
 
@@ -17,13 +18,13 @@ public class SettlementService : ISettlementService
     public async Task<SettlementResponse> CreateSettlementAsync(CreateSettlementRequest request, Guid currentUserId)
     {
         if (request.Amount <= 0)
-            throw new Exception("Amount must be greater than zero");
+            throw new BadRequestException("Amount must be greater than zero");
 
         if (request.FromUserId == request.ToUserId)
-            throw new Exception("You cannot settle a debt with yourself");
+            throw new BadRequestException("You cannot settle a debt with yourself");
 
         if (request.FromUserId != currentUserId)
-            throw new Exception("You can only create settlements from your own account");
+            throw new BadRequestException("You can only create settlements from your own account");
 
         var settlement = new Settlement
         {

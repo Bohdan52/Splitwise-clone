@@ -24,14 +24,7 @@ public class SettlementsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateSettlementRequest request)
     {
-        try
-        {
-            var result = await _settlementService.CreateSettlementAsync(request, GetUserId());
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var result = await _settlementService.CreateSettlementAsync(request, GetUserId());
+        return Ok(result);
     }
 }

@@ -4,6 +4,7 @@ using task2.Domain.Entities;
 using task2.Domain.Enums;
 using task2.Services.Implementations;
 using Xunit;
+using task2.Exceptions;
 
 namespace task2.Tests;
 
@@ -91,7 +92,7 @@ public class GroupServiceTests
         context.GroupMembers.Add(new GroupMember { Id = Guid.NewGuid(), GroupId = groupId, UserId = userId, Role = MemberRole.Member });
         await context.SaveChangesAsync();
 
-        await Assert.ThrowsAsync<Exception>(() => service.RemoveMemberAsync(groupId, otherId, userId));
+        await Assert.ThrowsAsync<ForbiddenException>(() => service.RemoveMemberAsync(groupId, otherId, userId));
     }
 
     [Fact]
@@ -100,6 +101,6 @@ public class GroupServiceTests
         var context = GetInMemoryDbContext();
         var service = new GroupService(context);
 
-        await Assert.ThrowsAsync<Exception>(() => service.AddMemberAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.AddMemberAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
     }
 }

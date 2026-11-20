@@ -3,6 +3,7 @@ using task2.Data;
 using task2.Domain.Entities;
 using task2.Domain.Enums;
 using task2.Services.Interfaces;
+using task2.Exceptions;
 
 namespace task2.Services.Implementations;
 
@@ -51,20 +52,20 @@ public class GroupService : IGroupService
     public async Task AddMemberAsync(Guid groupId, Guid userId, Guid currentUserId)
     {
         var group = await _context.Groups.FindAsync(groupId);
-        if (group == null) throw new Exception("Group not found");
+        if (group == null) throw new NotFoundException("Group not found");
 
         var isAdmin = await _context.GroupMembers
             .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == currentUserId && gm.Role == MemberRole.Admin);
 
-        if (!isAdmin) throw new Exception("Only group admins can add members.");
+        if (!isAdmin) throw new ForbiddenException("Only group admins can add members.");
 
         var userExists = await _context.Users.AnyAsync(u => u.Id == userId);
-        if (!userExists) throw new Exception("User not found");
+        if (!userExists) throw new NotFoundException("User not found");
 
         var alreadyMember = await _context.GroupMembers
             .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == userId);
 
-        if (alreadyMember) throw new Exception("User is already a member of this group.");
+        if (alreadyMember) throw new ConflictException("User is already a member of this group.");
 
         _context.GroupMembers.Add(new GroupMember
         {
@@ -80,19 +81,19 @@ public class GroupService : IGroupService
     public async Task RemoveMemberAsync(Guid groupId, Guid userId, Guid currentUserId)
     {
         var group = await _context.Groups.FindAsync(groupId);
-        if (group == null) throw new Exception("Group not found");
+        if (group == null) throw new NotFoundException("Group not found");
 
         var isAdmin = await _context.GroupMembers
             .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == currentUserId && gm.Role == MemberRole.Admin);
 
-        if (!isAdmin) throw new Exception("Only group admins can remove members.");
+        if (!isAdmin) throw new ForbiddenException("Only group admins can remove members.");
 
-        if (userId == currentUserId) throw new Exception("Admin cannot remove themselves.");
+        if (userId == currentUserId) throw new UnauthorizedException("Admin cannot remove themselves.");
 
         var member = await _context.GroupMembers
             .FirstOrDefaultAsync(gm => gm.GroupId == groupId && gm.UserId == userId);
 
-        if (member == null) throw new Exception("User is not a member of this group.");
+        if (member == null) throw new ForbiddenException("User is not a member of this group.");
 
         _context.GroupMembers.Remove(member);
         await _context.SaveChangesAsync();

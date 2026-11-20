@@ -3,6 +3,7 @@ using task2.Data;
 using task2.Dtos;
 using task2.Services.Implementations;
 using Xunit;
+using task2.Exceptions;
 
 namespace task2.Tests;
 
@@ -24,7 +25,7 @@ public class SettlementServiceTests
 
         var request = new CreateSettlementRequest(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), -50, "USD", "Test", DateOnly.FromDateTime(DateTime.Now));
 
-        await Assert.ThrowsAsync<Exception>(() => service.CreateSettlementAsync(request, Guid.NewGuid()));
+        await Assert.ThrowsAsync<BadRequestException>(() => service.CreateSettlementAsync(request, Guid.NewGuid()));
     }
 
     [Fact]
@@ -36,7 +37,7 @@ public class SettlementServiceTests
 
         var request = new CreateSettlementRequest(Guid.NewGuid(), userId, userId, 50, "USD", "Test", DateOnly.FromDateTime(DateTime.Now));
 
-        await Assert.ThrowsAsync<Exception>(() => service.CreateSettlementAsync(request, userId));
+        await Assert.ThrowsAsync<BadRequestException>(() => service.CreateSettlementAsync(request, userId));
     }
     [Fact]
     public async Task CreateSettlementAsync_ShouldCreateSettlement_WhenValid()
