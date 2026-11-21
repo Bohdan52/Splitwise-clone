@@ -28,20 +28,20 @@ public class ExpensesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        return Ok(await _expenseService.GetAllAsync());
+        return Ok(await _expenseService.GetAllAsync(GetUserId()));
     }
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        try { return Ok(await _expenseService.GetByIdAsync(id)); }
+        try { return Ok(await _expenseService.GetByIdAsync(id, GetUserId())); }
         catch (Exception ex) { return NotFound(ex.Message); }
     }
 
     [HttpGet("group/{groupId:guid}")]
     public async Task<IActionResult> GetByGroupId(Guid groupId)
     {
-        return Ok(await _expenseService.GetByGroupIdAsync(groupId));
+        return Ok(await _expenseService.GetByGroupIdAsync(groupId, GetUserId()));
     }
 
     [HttpPost]

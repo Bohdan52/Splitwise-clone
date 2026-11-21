@@ -2,6 +2,7 @@
 using task2.Data;
 using task2.Domain.Entities;
 using task2.Domain.Enums;
+using task2.Exceptions;
 using task2.Services.Implementations;
 using Xunit;
 
@@ -16,13 +17,8 @@ public class BalanceServiceTests
             .Options;
         return new SplitwiseDbContext(options);
     }
-
-    [Fact]
-    public async Task GetGroupSettlementsAsync_ShouldCalculateCorrectDebts()
+    private static (Guid groupId, Guid user1, Guid user2) SeedPizzaGroup(SplitwiseDbContext context)
     {
-        var context = GetInMemoryDbContext();
-        var service = new BalanceService(context);
-
         var groupId = Guid.NewGuid();
         var user1 = Guid.NewGuid();
         var user2 = Guid.NewGuid();
@@ -50,9 +46,18 @@ public class BalanceServiceTests
             }
         });
 
-        await context.SaveChangesAsync();
+        context.SaveChanges();
+        return (groupId, user1, user2);
+    }
 
-        var settlements = await service.GetGroupSettlementsAsync(groupId);
+    [Fact]
+    public async Task GetGroupSettlementsAsync_ShouldCalculateCorrectDebts()
+    {
+        var context = GetInMemoryDbContext();
+        var service = new BalanceService(context);
+        var (groupId, user1, user2) = SeedPizzaGroup(context);
+
+        var settlements = await service.GetGroupSettlementsAsync(groupId, user1);
 
         Assert.NotNull(settlements);
         var settlementList = settlements.ToList();
@@ -61,5 +66,16 @@ public class BalanceServiceTests
         Assert.Equal(user2, settlementList[0].FromUserId);
         Assert.Equal(user1, settlementList[0].ToUserId);
         Assert.Equal(50, settlementList[0].Amount);
+    }
+
+    [Fact]
+    public async Task GetGroupBalancesAsync_ShouldThrow_WhenUserIsNotMember()
+    {
+        var context = GetInMemoryDbContext();
+        var service = new BalanceService(context);
+        var (groupId, _, _) = SeedPizzaGroup(context);
+
+        await Assert.ThrowsAsync<ForbiddenException>(
+            () => service.GetGroupBalancesAsync(groupId, Guid.NewGuid()));
     }
 }

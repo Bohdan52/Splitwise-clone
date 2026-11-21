@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using task2.Data;
+using task2.Domain.Entities;
+using task2.Domain.Enums;
 using task2.Dtos;
+using task2.Exceptions;
 using task2.Services.Implementations;
 using Xunit;
-using task2.Exceptions;
 
 namespace task2.Tests;
 
@@ -15,6 +17,14 @@ public class SettlementServiceTests
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         return new SplitwiseDbContext(options);
+    }
+
+    private static void SeedMembers(SplitwiseDbContext context, Guid groupId, params Guid[] userIds)
+    {
+        foreach (var id in userIds)
+            context.GroupMembers.Add(new GroupMember
+            { Id = Guid.NewGuid(), GroupId = groupId, UserId = id, Role = MemberRole.Member });
+        context.SaveChanges();
     }
 
     [Fact]
@@ -46,7 +56,11 @@ public class SettlementServiceTests
         var service = new SettlementService(context);
         var currentUserId = Guid.NewGuid();
 
-        var request = new CreateSettlementRequest(Guid.NewGuid(), currentUserId, Guid.NewGuid(), 100, "USD", "Lunch", DateOnly.FromDateTime(DateTime.Now));
+        var groupId = Guid.NewGuid();
+        var receiverId = Guid.NewGuid();
+        SeedMembers(context, groupId, currentUserId, receiverId);
+
+        var request = new CreateSettlementRequest(groupId, currentUserId, receiverId, 100, "USD", "Lunch", DateOnly.FromDateTime(DateTime.Now));
 
         var result = await service.CreateSettlementAsync(request, currentUserId);
 
@@ -56,5 +70,20 @@ public class SettlementServiceTests
         var settlementInDb = await context.Settlements.FirstOrDefaultAsync();
         Assert.NotNull(settlementInDb);
         Assert.Equal(currentUserId, settlementInDb.FromUserId);
+    }
+
+    [Fact]
+    public async Task CreateSettlementAsync_ShouldThrow_WhenReceiverIsNotInGroup()
+    {
+        var context = GetInMemoryDbContext();
+        var service = new SettlementService(context);
+
+        var groupId = Guid.NewGuid();
+        var currentUserId = Guid.NewGuid();
+        SeedMembers(context, groupId, currentUserId);
+
+        var request = new CreateSettlementRequest(groupId, currentUserId, Guid.NewGuid(), 100, "USD", "Lunch", DateOnly.FromDateTime(DateTime.Now));
+
+        await Assert.ThrowsAsync<ForbiddenException>(() => service.CreateSettlementAsync(request, currentUserId));
     }
 }

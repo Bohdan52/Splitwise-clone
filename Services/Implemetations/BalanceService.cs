@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using task2.Data;
 using task2.Dtos;
+using task2.Services.Implemetations;
 using task2.Services.Interfaces;
 
 namespace task2.Services.Implementations;
@@ -14,7 +15,7 @@ public class BalanceService : IBalanceService
         _context = context;
     }
 
-    public async Task<IEnumerable<BalanceResponse>> GetGroupBalancesAsync(Guid groupId)
+    private async Task<IEnumerable<BalanceResponse>> CalculateBalancesAsync(Guid groupId)
     {
         var balances = new Dictionary<Guid, decimal>();
 
@@ -68,9 +69,16 @@ public class BalanceService : IBalanceService
         return balances.Select(b => new BalanceResponse(b.Key, b.Value));
     }
 
-    public async Task<IEnumerable<SettlementSuggestionResponse>> GetGroupSettlementsAsync(Guid groupId)
+    public async Task<IEnumerable<BalanceResponse>> GetGroupBalancesAsync(Guid groupId, Guid currentUserId)
     {
-        var balancesResult = await GetGroupBalancesAsync(groupId);
+        await _context.EnsureMemberAsync(groupId, currentUserId);
+        return await CalculateBalancesAsync(groupId);
+    }
+
+    public async Task<IEnumerable<SettlementSuggestionResponse>> GetGroupSettlementsAsync(Guid groupId, Guid currentUserId)
+    {
+        await _context.EnsureMemberAsync(groupId, currentUserId);
+        var balancesResult = await GetGroupBalancesAsync(groupId, currentUserId);
 
         var debtors = balancesResult.Where(b => b.Balance < 0)
             .Select(b => new { UserId = b.UserId, Amount = -b.Balance })
