@@ -38,6 +38,9 @@ public class CreateExpenseRequestValidator : AbstractValidator<CreateExpenseRequ
         RuleFor(x => x.PaidById).NotEmpty();
         RuleFor(x => x.SplitType).IsInEnum();
         RuleFor(x => x.Participants).NotEmpty();
+        RuleFor(x => x.Amount)
+            .GreaterThan(0)
+            .Must(a => decimal.Round(a, 2) == a).WithMessage("The amount can have no more than 2 decimal places .");
     }
 }
 

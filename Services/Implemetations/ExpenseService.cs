@@ -98,47 +98,56 @@ public class ExpenseService : IExpenseService
 
     private List<ExpenseSplit> CalculateSplits(CreateExpenseRequest request, Guid expenseId)
     {
-        var splits = new List<ExpenseSplit>();
-        if (request.Participants == null || !request.Participants.Any())
-            return splits;
+        var participants = request.Participants;
+        if (participants == null || participants.Count == 0)
+            return new List<ExpenseSplit>();
 
-        int participantsCount = request.Participants.Count;
+        decimal[] owed;
 
-        foreach (var participant in request.Participants)
+        switch (request.SplitType)
         {
-            decimal amountOwed = 0;
+            case SplitType.Equal:
+                owed = MoneyAllocator.Allocate(request.Amount, participants.Select(_ => 1m).ToList());
+                break;
 
-            switch (request.SplitType)
-            {
-                case SplitType.Equal:
-                    amountOwed = request.Amount / participantsCount;
-                    break;
-                case SplitType.Exact:
-                    amountOwed = participant.Amount ?? 0;
-                    break;
-                case SplitType.Percentage: 
-                    amountOwed = request.Amount * ((participant.Percent ?? 0) / 100m);
-                    break;
-                case SplitType.Shares:
-                    decimal totalShares = request.Participants.Sum(p => p.Shares ?? 1);
-                    decimal userShares = participant.Shares ?? 1;
-                    amountOwed = request.Amount * (userShares / totalShares);
-                    break;
-            }
+            case SplitType.Exact:
+                owed = participants.Select(p => p.Amount ?? 0).ToArray();
+                if (owed.Any(a => a < 0 || decimal.Round(a, 2) != a))
+                    throw new BadRequestException("The participants' amounts must be non-negative and have no more than 2 decimal places.");
+                if (owed.Sum() != request.Amount)
+                    throw new BadRequestException("The sum of participants' amounts must equal the expense amount.");
+                break;
 
-            amountOwed = Math.Round(amountOwed, 2);
+            case SplitType.Percentage:
+                var percents = participants.Select(p => p.Percent ?? 0).ToList();
+                if (percents.Any(p => p <= 0))
+                    throw new BadRequestException("The percentage of each participant must be greater than zero.");
+                if (percents.Sum() != 100m)
+                    throw new BadRequestException("The percentages of participants must add up to 100.");
+                owed = MoneyAllocator.Allocate(request.Amount, percents);
+                break;
 
-            splits.Add(new ExpenseSplit
+            case SplitType.Shares:
+                var shares = participants.Select(p => p.Shares ?? 1).ToList();
+                if (shares.Any(s => s <= 0))
+                    throw new BadRequestException("The number of shares for each participant must be greater than zero.");
+                owed = MoneyAllocator.Allocate(request.Amount, shares);
+                break;
+
+            default:
+                throw new BadRequestException("Unknown split type.");
+        }
+
+        return participants
+            .Select((p, i) => new ExpenseSplit
             {
                 Id = Guid.NewGuid(),
                 ExpenseId = expenseId,
-                UserId = participant.UserId,
-                AmountOwed = amountOwed,
-                ShareValue = participant.Shares
-            });
-        }
-
-        return splits;
+                UserId = p.UserId,
+                AmountOwed = owed[i],
+                ShareValue = p.Shares
+            })
+            .ToList();
     }
 
     private static ExpenseResponse MapToResponse(Expense e)

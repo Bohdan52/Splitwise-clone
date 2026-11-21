@@ -34,8 +34,7 @@ public class ExpensesController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        try { return Ok(await _expenseService.GetByIdAsync(id, GetUserId())); }
-        catch (Exception ex) { return NotFound(ex.Message); }
+        return Ok(await _expenseService.GetByIdAsync(id, GetUserId())); 
     }
 
     [HttpGet("group/{groupId:guid}")]
