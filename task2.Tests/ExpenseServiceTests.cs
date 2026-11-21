@@ -167,4 +167,63 @@ public class ExpenseServiceTests
 
         await Assert.ThrowsAsync<BadRequestException>(() => service.CreateAsync(request, payer));
     }
+    [Fact]
+    public async Task CreateAsync_EqualSplit_ShouldNotLoseCents()
+    {
+        var context = GetInMemoryDbContext();
+        var service = new ExpenseService(context);
+
+        var groupId = Guid.NewGuid();
+        var u1 = Guid.NewGuid();
+        var u2 = Guid.NewGuid();
+        var u3 = Guid.NewGuid();
+        SeedMembers(context, groupId, u1, u2, u3);
+
+        var request = new CreateExpenseRequest(
+            GroupId: groupId, Description: "Taxi", Amount: 100, Currency: "USD", Category: null,
+            Date: DateOnly.FromDateTime(DateTime.UtcNow), PaidById: u1, SplitType: SplitType.Equal,
+            Participants: new List<SplitInputDto> { new(u1), new(u2), new(u3) });
+
+        var result = await service.CreateAsync(request, u1);
+
+        Assert.Equal(100m, result.Splits.Sum(s => s.AmountOwed));
+    }
+
+    [Fact]
+    public async Task CreateAsync_ExactSplit_ShouldThrow_WhenAmountsDoNotMatchTotal()
+    {
+        var context = GetInMemoryDbContext();
+        var service = new ExpenseService(context);
+
+        var groupId = Guid.NewGuid();
+        var u1 = Guid.NewGuid();
+        var u2 = Guid.NewGuid();
+        SeedMembers(context, groupId, u1, u2);
+
+        var request = new CreateExpenseRequest(
+            GroupId: groupId, Description: "Dinner", Amount: 100, Currency: "USD", Category: null,
+            Date: DateOnly.FromDateTime(DateTime.UtcNow), PaidById: u1, SplitType: SplitType.Exact,
+            Participants: new List<SplitInputDto> { new(u1, Amount: 40), new(u2, Amount: 40) });
+
+        await Assert.ThrowsAsync<BadRequestException>(() => service.CreateAsync(request, u1));
+    }
+
+    [Fact]
+    public async Task CreateAsync_PercentageSplit_ShouldThrow_WhenPercentsDoNotSumTo100()
+    {
+        var context = GetInMemoryDbContext();
+        var service = new ExpenseService(context);
+
+        var groupId = Guid.NewGuid();
+        var u1 = Guid.NewGuid();
+        var u2 = Guid.NewGuid();
+        SeedMembers(context, groupId, u1, u2);
+
+        var request = new CreateExpenseRequest(
+            GroupId: groupId, Description: "Party", Amount: 200, Currency: "USD", Category: null,
+            Date: DateOnly.FromDateTime(DateTime.UtcNow), PaidById: u1, SplitType: SplitType.Percentage,
+            Participants: new List<SplitInputDto> { new(u1, Percent: 30), new(u2, Percent: 30) });
+
+        await Assert.ThrowsAsync<BadRequestException>(() => service.CreateAsync(request, u1));
+    }
 }
