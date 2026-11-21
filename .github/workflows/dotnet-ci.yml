@@ -1,10 +1,10 @@
-name: .NET CI Pipeline
+name: CI
 
 on:
   push:
-    branches: [ "main", "BLogic", "Exception", "Test" ] # Запускати при пуші в будь-яку з цих гілок
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "BLogic", "Exception", "Test" ] # Запускати при створенні Pull Request
+    branches: [ "main" ]
 
 jobs:
   build-and-test:
@@ -17,13 +17,27 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.x' # Вказуємо версію .NET, яку ви використовуєте
+        dotnet-version: '10.0.x'
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore task2.sln
 
     - name: Build solution
-      run: dotnet build --no-restore --configuration Release
+      run: dotnet build task2.sln --no-restore --configuration Release
 
     - name: Run tests
-      run: dotnet test --no-build --configuration Release --verbosity normal
+      run: dotnet test task2.sln --no-build --configuration Release --verbosity normal
+
+    - name: Docker build
+      run: docker build --tag api:${{ github.sha }} .
+
+  deploy:
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Trigger deploy hook
+      env:
+        DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+      run: curl --fail --silent --show-error -X POST "$DEPLOY_HOOK_URL"

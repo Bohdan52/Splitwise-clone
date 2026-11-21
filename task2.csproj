@@ -4,7 +4,8 @@
 		<TargetFramework>net10.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
-	</PropertyGroup>
+	  <UserSecretsId>cb4f4b60-1180-416d-bf20-704f2f706834</UserSecretsId>
+  </PropertyGroup>
 
 	<!-- Блок, який ми додали для ігнорування тестів -->
 	<ItemGroup>

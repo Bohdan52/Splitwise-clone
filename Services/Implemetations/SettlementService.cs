@@ -1,8 +1,9 @@
 ﻿using task2.Data;
 using task2.Domain.Entities;
 using task2.Dtos;
-using task2.Services.Interfaces;
 using task2.Exceptions;
+using task2.Services.Implemetations;
+using task2.Services.Interfaces;
 
 namespace task2.Services.Implementations;
 
@@ -25,6 +26,12 @@ public class SettlementService : ISettlementService
 
         if (request.FromUserId != currentUserId)
             throw new BadRequestException("You can only create settlements from your own account");
+        
+        if (request.GroupId is { } groupId)
+        {
+            await _context.EnsureMemberAsync(groupId, request.FromUserId);
+            await _context.EnsureMemberAsync(groupId, request.ToUserId);
+        }
 
         var settlement = new Settlement
         {

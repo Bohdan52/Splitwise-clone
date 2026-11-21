@@ -88,14 +88,21 @@ public class GroupService : IGroupService
 
         if (!isAdmin) throw new ForbiddenException("Only group admins can remove members.");
 
-        if (userId == currentUserId) throw new UnauthorizedException("Admin cannot remove themselves.");
+        if (userId == currentUserId) throw new BadRequestException("Admin cannot remove themselves.");
 
         var member = await _context.GroupMembers
             .FirstOrDefaultAsync(gm => gm.GroupId == groupId && gm.UserId == userId);
 
-        if (member == null) throw new ForbiddenException("User is not a member of this group.");
+        if (member == null) throw new NotFoundException("User is not a member of this group.");
 
         _context.GroupMembers.Remove(member);
         await _context.SaveChangesAsync();
+    }
+    public async Task EnsureUserInGroupAsync(Guid groupId, Guid userId)
+    {
+        var Member = await _context.GroupMembers
+            .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == userId);
+
+        if (!Member) throw new ForbiddenException("User is not a member of this group.");
     }
 }

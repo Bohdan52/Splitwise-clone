@@ -4,6 +4,6 @@ namespace task2.Services.Interfaces;
 
 public interface IBalanceService
 {
-    Task<IEnumerable<BalanceResponse>> GetGroupBalancesAsync(Guid groupId);
-    Task<IEnumerable<SettlementSuggestionResponse>> GetGroupSettlementsAsync(Guid groupId);
+    Task<IEnumerable<BalanceResponse>> GetGroupBalancesAsync(Guid groupId, Guid currentUserId);
+    Task<IEnumerable<SettlementSuggestionResponse>> GetGroupSettlementsAsync(Guid groupId, Guid currentUserId);
 }
